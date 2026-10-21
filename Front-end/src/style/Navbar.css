@@ -1,0 +1,143 @@
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: min(1200px, 92%);
+  min-height: 76px;
+  margin: 0 auto;
+}
+
+.navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #172033;
+}
+
+.navbar-logo {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  color: #fff;
+  font-size: 23px;
+  font-weight: 800;
+  box-shadow: 0 5px 12px rgba(79, 70, 229, 0.2);
+}
+
+.navbar-brand-text {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.navbar-brand-text span {
+  color: #6366f1;
+}
+
+.navbar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.navbar-link,
+.navbar-logout {
+  padding: 10px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 650;
+  transition: background 0.2s, color 0.2s;
+}
+
+.navbar-link:hover,
+.navbar-logout:hover {
+  background: #f1f5f9;
+  color: #4f46e5;
+}
+
+.navbar-create {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 41px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.navbar-create:hover {
+  transform: translateY(-1px);
+  background: #4f46e5;
+  color: #fff;
+}
+
+.navbar-create span {
+  font-size: 19px;
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .navbar-inner {
+    min-height: 68px;
+    gap: 10px;
+  }
+
+  .navbar-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    font-size: 20px;
+  }
+
+  .navbar-brand {
+    gap: 8px;
+  }
+
+  .navbar-brand-text {
+    font-size: 17px;
+  }
+
+  .navbar-navigation {
+    gap: 5px;
+  }
+
+  .navbar-link,
+  .navbar-logout {
+    padding: 9px 7px;
+    font-size: 12px;
+  }
+
+  .navbar-create {
+    min-height: 37px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+}

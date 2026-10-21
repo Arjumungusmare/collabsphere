@@ -1,0 +1,340 @@
+
+/* ==============================
+   NOTE CARD — PREMIUM DESIGN
+================================ */
+
+.note-card,
+.note-card:hover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 260px;
+  padding: 26px 24px;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 5%) !important;
+
+  /* Card par hover bilkul nahi */
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Top section */
+
+.note-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+/* Note icon */
+
+.note-card-icon,
+.note-card:hover .note-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: #eef2ff !important;
+  color: #4f46e5 !important;
+  font-size: 24px;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Saved note badge */
+
+.note-card-status,
+.note-card:hover .note-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.note-card-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+/* Note title — no purple color */
+
+.note-card-title,
+.note-card:hover .note-card-title {
+  margin: 0 0 12px;
+  color: #1e293b !important;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.4px;
+  overflow-wrap: anywhere;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Note content */
+
+.note-card-content,
+.note-card:hover .note-card-content {
+  margin: 0 0 28px;
+  color: #64748b !important;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Footer */
+
+.note-card-footer,
+.note-card:hover .note-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Date */
+
+.note-card-date {
+  color: #64748b !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Buttons container */
+
+.note-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* EDIT and DELETE — same base design */
+
+.note-card-edit,
+.note-card-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 42px;
+  padding: 10px 16px;
+
+  border: 1px solid #c7d2fe !important;
+  border-radius: 10px;
+
+  background: #eef2ff !important;
+  color: #4338ca !important;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+
+  cursor: pointer;
+  box-shadow: none;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+/* Hover ONLY on buttons */
+
+.note-card-edit:hover,
+.note-card-delete:hover {
+  background: #dfe5ff !important;
+  color: #3730a3 !important;
+  border-color: #a5b4fc !important;
+  transform: translateY(-2px) !important;
+  box-shadow: none !important;
+}
+
+/* Click effect */
+
+.note-card-edit:active,
+.note-card-delete:active {
+  transform: translateY(0) !important;
+}
+
+/* Keyboard accessibility */
+
+.note-card-edit:focus-visible,
+.note-card-delete:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+}
+
+/* Dark mode */
+
+:root[data-theme="dark"] .note-card,
+:root[data-theme="dark"] .note-card:hover {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .note-card-title,
+:root[data-theme="dark"] .note-card:hover .note-card-title {
+  color: #f1f5f9 !important;
+}
+
+:root[data-theme="dark"] .note-card-content,
+:root[data-theme="dark"] .note-card:hover .note-card-content,
+:root[data-theme="dark"] .note-card-date {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .note-card-footer {
+  border-top-color: #334155;
+}
+
+/* Responsive design */
+
+@media (max-width: 480px) {
+  .note-card,
+  .note-card:hover {
+    min-height: 230px;
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .note-card-title,
+  .note-card:hover .note-card-title {
+    font-size: 19px;
+  }
+
+  .note-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .note-card-actions {
+    width: 100%;
+  }
+
+  .note-card-edit,
+  .note-card-delete {
+    flex: 1;
+  }
+}
+
+
+/* Professional Note Cards */
+
+.note-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e6e9f2;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: none;
+  transition: transform 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-3px);
+  border-color: #d5d8ff;
+  box-shadow: 0 12px 28px rgba(31, 41, 75, 0.08);
+}
+
+.note-card h2,
+.note-card h3 {
+  color: #202943;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.note-card p {
+  color: #778198;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.note-card button {
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid #e3e6ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #47536b;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.note-card button:hover {
+  border-color: #c9cbff;
+  background: #f5f5ff;
+}
+
+.note-card button:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+.note-card .delete-button,
+.note-card .delete-btn {
+  border-color: #fee2e2;
+  color: #dc2626;
+}
+
+.note-card .delete-button:hover,
+.note-card .delete-btn:hover {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+@media (max-width: 600px) {
+  .note-card {
+    padding: 17px;
+  }
+}
