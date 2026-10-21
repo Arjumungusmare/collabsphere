@@ -1,149 +1,174 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import API_BASE_URL from "../api";
 
-function Login() {
+export default function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
     setError("");
 
-    if (!email.trim() || !password.trim()) {
-      setError("Email and password are required");
+    if (!formData.email.trim() || !formData.password) {
+      setError("Please enter your email and password.");
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        `${API_BASE_URL}/api/auth/login`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email,
-            password,
+            email: formData.email.trim(),
+            password: formData.password,
           }),
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setError(data.message || "Login failed");
-        return;
+        throw new Error(
+          data.message ||
+            data.error ||
+            `Login failed (${response.status}).`
+        );
       }
 
-      // Store JWT only after successful login
-      localStorage.setItem("token", data.token);
+      // Support common token property names.
+      const token = data.token || data.accessToken;
+      const user = data.user || data;
 
-      // Clear form values
-      setEmail("");
-      setPassword("");
+      if (!token) {
+        throw new Error(
+          "Login response did not contain a token. Check your backend response format."
+        );
+      }
 
-      // Go to dashboard
+      // Save authentication data.
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Redirect to dashboard.
       navigate("/dashboard");
-    } catch (error) {
-      console.error("LOGIN ERROR:", error);
-      setError("Unable to connect to server");
+    } catch (err) {
+      console.error("LOGIN ERROR:", err);
+
+      setError(
+        err instanceof TypeError
+          ? "Unable to connect to server. Please try again."
+          : err.message || "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+        <h1 className="mb-2 text-center text-3xl font-bold text-slate-800">
+          Login to CollabNotes
+        </h1>
 
-        <div className="auth-header">
-          <span className="eyebrow">WELCOME BACK</span>
-
-          <h1>Login to CollabNotes</h1>
-
-          <p>
-            Continue working on your notes and ideas.
-          </p>
-        </div>
+        <p className="mb-6 text-center text-slate-500">
+          Continue working on your notes and ideas.
+        </p>
 
         {error && (
-          <div className="error-message">
+          <div
+            role="alert"
+            className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          >
             {error}
           </div>
         )}
 
-        <form
-          onSubmit={handleLogin}
-          autoComplete="off"
-        >
-          {/* Email */}
-
-          <div className="form-group">
-            <label htmlFor="login-email">
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Email
             </label>
 
             <input
-              id="login-email"
+              id="email"
+              name="email"
               type="email"
-              name="login-email"
+              autoComplete="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="off"
               required
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
-          {/* Password */}
-
-          <div className="form-group">
-            <label htmlFor="login-password">
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Password
             </label>
 
             <input
-              id="login-password"
+              id="password"
+              name="password"
               type="password"
-              name="login-password"
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
               required
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
-          {/* Login button */}
-
           <button
             type="submit"
-            className="primary-btn auth-btn"
             disabled={loading}
+            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="auth-footer">
+        <p className="mt-6 text-center text-sm text-slate-600">
           Don't have an account?{" "}
-          <Link to="/register">
-            Create one
+          <Link
+            to="/register"
+            className="font-semibold text-blue-600 hover:underline"
+          >
+            Register
           </Link>
         </p>
-
       </div>
     </div>
   );
 }
-
-export default Login;

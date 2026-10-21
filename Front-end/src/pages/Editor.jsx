@@ -1,46 +1,27 @@
+
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import API_BASE_URL from "../api";
 import "../style/Editor.css";
 
-const API_URL = "http://localhost:5000/api/notes";
-const AI_URL = "http://localhost:5000/api/ai/chat";
-const ATTACHMENT_URL = "http://localhost:5000/api/attachments";
+const API_URL = `${API_BASE_URL}/api/notes`;
+const AI_URL = `${API_BASE_URL}/api/ai/chat`;
+const ATTACHMENT_URL = `${API_BASE_URL}/api/attachments`;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = [
-  ".txt",
-  ".md",
-  ".js",
-  ".jsx",
-  ".ts",
-  ".tsx",
-  ".py",
-  ".json",
-  ".css",
-  ".html",
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".webp",
-  ".pdf",
+  ".txt", ".md", ".js", ".jsx", ".ts", ".tsx",
+  ".py", ".json", ".css", ".html",
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf",
 ];
 
 const TEXT_EXTENSIONS = [
-  ".txt",
-  ".md",
-  ".js",
-  ".jsx",
-  ".ts",
-  ".tsx",
-  ".py",
-  ".json",
-  ".css",
-  ".html",
+  ".txt", ".md", ".js", ".jsx", ".ts", ".tsx",
+  ".py", ".json", ".css", ".html",
 ];
 
 function getExtension(filename = "") {
@@ -60,7 +41,6 @@ function formatSize(bytes = 0) {
 function Editor() {
   const navigate = useNavigate();
   const { id } = useParams();
-
   const previewUrlRef = useRef(null);
 
   const [title, setTitle] = useState("");
@@ -69,46 +49,41 @@ function Editor() {
 
   const [loading, setLoading] = useState(Boolean(id));
   const [saving, setSaving] = useState(false);
-
   const [suggesting, setSuggesting] = useState(false);
   const [explaining, setExplaining] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
   const [suggestions, setSuggestions] = useState("");
   const [explanation, setExplanation] = useState("");
 
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
-
   const [fileError, setFileError] = useState("");
   const [fileSuccess, setFileSuccess] = useState("");
 
   const [previewFile, setPreviewFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewText, setPreviewText] = useState("");
-
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
 
-  const token = localStorage.getItem("token");
-
-  // Handle expired login session
   const handleUnauthorized = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     navigate("/login");
   };
 
-  // Load an existing note
+  // Load an existing note.
   useEffect(() => {
+    let cancelled = false;
+
     if (!id) {
       setTitle("");
       setContent("");
       setAttachments([]);
       setLoading(false);
+      setError("");
       return;
     }
 
@@ -134,22 +109,30 @@ function Editor() {
           throw new Error(data.message || "Failed to load note.");
         }
 
+        if (cancelled) return;
+
         const note = data.note || data;
 
         setTitle(note.title || "");
         setContent(note.content || "");
         setAttachments(note.attachments || []);
       } catch (err) {
-        setError(err.message || "Unable to load note.");
+        if (!cancelled) {
+          setError(err.message || "Unable to load note.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadNote();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  // Release preview URLs when the component unmounts
+  // Release object URLs when the component unmounts.
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
@@ -158,7 +141,6 @@ function Editor() {
     };
   }, []);
 
-  // Close file preview
   const closePreview = () => {
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -172,7 +154,7 @@ function Editor() {
     setPreviewLoading(false);
   };
 
-  // Save note
+  // Save the note.
   const handleSave = async (event) => {
     event.preventDefault();
 
@@ -212,30 +194,22 @@ function Editor() {
         throw new Error(data.message || "Failed to save note.");
       }
 
-      // Clear editor after saving
       setTitle("");
       setContent("");
       setPreview(false);
-
       setSuggestions("");
       setExplanation("");
-
       setAttachments([]);
-
-      setError("");
       setFileError("");
       setFileSuccess("");
-
+      setError("");
       closePreview();
 
-      // Return to a blank editor
       if (id) {
         navigate("/editor", { replace: true });
       }
 
-      setSuccess(
-        "Note saved successfully! The editor is now empty."
-      );
+      setSuccess("Note saved successfully! The editor is now empty.");
     } catch (err) {
       setError(err.message || "Unable to save note.");
     } finally {
@@ -243,12 +217,35 @@ function Editor() {
     }
   };
 
-  // Ask AI to suggest improvements
+  // Shared helper for Gemini AI requests.
+  const askAI = async (message) => {
+    const response = await fetch(AI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ message }),
+    });
+
+    if (response.status === 401) {
+      handleUnauthorized();
+      throw new Error("Session expired. Please log in again.");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "AI request failed.");
+    }
+
+    return data.reply || "No response was returned.";
+  };
+
+  // Ask AI to suggest improvements.
   const handleSuggestImprovements = async () => {
     if (!content.trim()) {
-      setError(
-        "Add some note content before requesting suggestions."
-      );
+      setError("Add some note content before requesting suggestions.");
       return;
     }
 
@@ -257,33 +254,14 @@ function Editor() {
     setError("");
 
     try {
-      const response = await fetch(AI_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          message:
-            "Review this note and suggest practical improvements. " +
-            "Do not modify the original note. Keep the answer concise " +
-            "and use Markdown.\n\n" +
-            `Title: ${title}\n\nContent:\n${content}`,
-        }),
-      });
+      const reply = await askAI(
+        "Review this note and suggest practical improvements. " +
+        "Do not modify the original note. Keep the answer concise " +
+        "and use Markdown.\n\n" +
+        `Title: ${title}\n\nContent:\n${content}`
+      );
 
-      if (response.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "AI suggestions failed.");
-      }
-
-      setSuggestions(data.reply || "No suggestions returned.");
+      setSuggestions(reply);
     } catch (err) {
       setError(err.message || "Unable to get AI suggestions.");
     } finally {
@@ -291,12 +269,10 @@ function Editor() {
     }
   };
 
-  // Ask AI to explain the current note
+  // Ask AI to explain the note.
   const handleExplainNote = async () => {
     if (!content.trim()) {
-      setError(
-        "Add some note content before requesting an explanation."
-      );
+      setError("Add some note content before requesting an explanation.");
       return;
     }
 
@@ -305,38 +281,15 @@ function Editor() {
     setError("");
 
     try {
-      const response = await fetch(AI_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          message:
-            "Explain this note in simple English for a beginner. " +
-            "Explain the main idea, important points, and technical " +
-            "terms. Use headings and short examples where helpful. " +
-            "Keep the answer concise and do not change the original note.\n\n" +
-            `Title: ${title}\n\nContent:\n${content}`,
-        }),
-      });
-
-      if (response.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to explain the note."
-        );
-      }
-
-      setExplanation(
-        data.reply || "No explanation was returned."
+      const reply = await askAI(
+        "Explain this note in simple English for a beginner. " +
+        "Explain the main idea, important points, and technical " +
+        "terms. Use headings and short examples where helpful. " +
+        "Keep the answer concise and do not change the original note.\n\n" +
+        `Title: ${title}\n\nContent:\n${content}`
       );
+
+      setExplanation(reply);
     } catch (err) {
       setError(err.message || "Unable to explain this note.");
     } finally {
@@ -344,10 +297,9 @@ function Editor() {
     }
   };
 
-  // Upload a file to the current saved note
+  // Upload a file to the current saved note.
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
-
     event.target.value = "";
 
     if (!file) return;
@@ -374,7 +326,6 @@ function Editor() {
 
     try {
       const formData = new FormData();
-
       formData.append("file", file);
 
       const response = await fetch(`${ATTACHMENT_URL}/${id}`, {
@@ -396,10 +347,12 @@ function Editor() {
         throw new Error(data.message || "File upload failed.");
       }
 
-      setAttachments((previous) => [
-        ...previous,
-        data.attachment,
-      ]);
+      if (data.attachment) {
+        setAttachments((previous) => [
+          ...previous,
+          data.attachment,
+        ]);
+      }
 
       setFileSuccess("File uploaded successfully.");
     } catch (err) {
@@ -409,7 +362,7 @@ function Editor() {
     }
   };
 
-  // Fetch attachments using authentication
+  // Fetch an attachment with authentication.
   const fetchAttachmentBlob = async (file, download = false) => {
     if (!id || !file._id) {
       throw new Error("Attachment information is incomplete.");
@@ -428,7 +381,6 @@ function Editor() {
 
     if (response.status === 401) {
       handleUnauthorized();
-
       throw new Error("Session expired. Please log in again.");
     }
 
@@ -439,7 +391,7 @@ function Editor() {
         const data = await response.json();
         message = data.message || message;
       } catch {
-        // Use fallback message
+        // Keep the fallback message.
       }
 
       throw new Error(message);
@@ -448,10 +400,9 @@ function Editor() {
     return response.blob();
   };
 
-  // Preview text, code, images and PDF files
+  // Preview text, code, images and PDFs.
   const handlePreview = async (file) => {
     closePreview();
-
     setPreviewFile(file);
     setPreviewLoading(true);
 
@@ -463,9 +414,7 @@ function Editor() {
         const text = await blob.text();
 
         if (text.length > 1_000_000) {
-          throw new Error(
-            "This text file is too large to preview."
-          );
+          throw new Error("This text file is too large to preview.");
         }
 
         setPreviewText(text);
@@ -475,14 +424,10 @@ function Editor() {
         )
       ) {
         const objectUrl = URL.createObjectURL(blob);
-
         previewUrlRef.current = objectUrl;
-
         setPreviewUrl(objectUrl);
       } else {
-        throw new Error(
-          "Preview is not supported for this file."
-        );
+        throw new Error("Preview is not supported for this file.");
       }
     } catch (err) {
       setPreviewError(err.message || "Unable to preview file.");
@@ -491,37 +436,39 @@ function Editor() {
     }
   };
 
-  // Download an attachment
+  // Download an attachment.
   const handleDownload = async (file) => {
     setFileError("");
     setFileSuccess("");
 
+    let objectUrl;
+
     try {
       const blob = await fetchAttachmentBlob(file, true);
-      const objectUrl = URL.createObjectURL(blob);
+      objectUrl = URL.createObjectURL(blob);
 
       const link = document.createElement("a");
-
       link.href = objectUrl;
       link.download = file.originalName || "attachment";
 
       document.body.appendChild(link);
-
       link.click();
       link.remove();
 
-      URL.revokeObjectURL(objectUrl);
+      setFileSuccess("Download started.");
     } catch (err) {
       setFileError(err.message || "Download failed.");
+    } finally {
+      if (objectUrl) {
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      }
     }
   };
 
-  // Loading screen
   if (loading) {
     return (
       <div className="editor-page">
         <Navbar />
-
         <main className="editor-container">
           <p>Loading note...</p>
         </main>
@@ -534,36 +481,23 @@ function Editor() {
       <Navbar />
 
       <main className="editor-container">
-        {/* Page heading */}
         <div className="editor-heading">
           <h1>{id ? "Edit Note" : "Create Note"}</h1>
-
-          <p>
-            Write, organize, and attach files to your notes.
-          </p>
+          <p>Write, organize, and attach files to your notes.</p>
         </div>
 
-        {/* General error */}
         {error && (
-          <div
-            className="editor-message editor-error"
-            role="alert"
-          >
+          <div className="editor-message editor-error" role="alert">
             {error}
           </div>
         )}
 
-        {/* Success message */}
         {success && (
-          <div
-            className="editor-message editor-success"
-            role="status"
-          >
+          <div className="editor-message editor-success" role="status">
             {success}
           </div>
         )}
 
-        {/* Note editor */}
         <form className="editor-card" onSubmit={handleSave}>
           <label htmlFor="note-title">Note title</label>
 
@@ -582,9 +516,7 @@ function Editor() {
             <button
               type="button"
               className="editor-secondary-button"
-              onClick={() =>
-                setPreview((previous) => !previous)
-              }
+              onClick={() => setPreview((previous) => !previous)}
             >
               {preview ? "Edit Markdown" : "Preview Markdown"}
             </button>
@@ -615,7 +547,6 @@ function Editor() {
           )}
         </form>
 
-        {/* File upload and attachments */}
         <section className="attachments-section">
           <h2>Files & Attachments</h2>
 
@@ -655,9 +586,7 @@ function Editor() {
           )}
 
           {attachments.length === 0 ? (
-            <p className="attachments-empty">
-              No files attached yet.
-            </p>
+            <p className="attachments-empty">No files attached yet.</p>
           ) : (
             <div className="attachments-list">
               {attachments.map((file) => (
@@ -696,16 +625,12 @@ function Editor() {
           )}
         </section>
 
-        {/* Attachment preview */}
         {previewFile && (
           <section className="attachment-preview">
             <div className="attachment-preview-header">
               <h2>{previewFile.originalName}</h2>
 
-              <button
-                type="button"
-                onClick={closePreview}
-              >
+              <button type="button" onClick={closePreview}>
                 Close Preview
               </button>
             </div>
@@ -718,13 +643,11 @@ function Editor() {
               </p>
             )}
 
-            {!previewLoading &&
-              !previewError &&
-              previewText !== "" && (
-                <pre className="attachment-text-preview">
-                  <code>{previewText}</code>
-                </pre>
-              )}
+            {!previewLoading && !previewError && previewText !== "" && (
+              <pre className="attachment-text-preview">
+                <code>{previewText}</code>
+              </pre>
+            )}
 
             {!previewLoading &&
               !previewError &&
@@ -750,43 +673,33 @@ function Editor() {
           </section>
         )}
 
-        {/* AI Note Assistant */}
         <section className="editor-ai-section">
           <div className="editor-ai-heading">
             <div>
               <h2>AI Note Assistant</h2>
-
               <p>
                 Get suggestions or understand your note with Gemini AI.
               </p>
             </div>
 
             <div className="editor-ai-buttons">
-              {/* Suggest improvements button */}
               <button
                 type="button"
                 className="editor-ai-button"
                 onClick={handleSuggestImprovements}
                 disabled={
-                  suggesting ||
-                  explaining ||
-                  !content.trim()
+                  suggesting || explaining || !content.trim()
                 }
               >
-                {suggesting
-                  ? "Thinking..."
-                  : "Suggest Improvements"}
+                {suggesting ? "Thinking..." : "Suggest Improvements"}
               </button>
 
-              {/* Explain note button */}
               <button
                 type="button"
                 className="editor-ai-button"
                 onClick={handleExplainNote}
                 disabled={
-                  explaining ||
-                  suggesting ||
-                  !content.trim()
+                  explaining || suggesting || !content.trim()
                 }
               >
                 {explaining
@@ -796,7 +709,6 @@ function Editor() {
             </div>
           </div>
 
-          {/* AI suggestions result */}
           {suggestions && (
             <div className="editor-suggestions">
               <h3>Suggested Improvements</h3>
@@ -807,7 +719,6 @@ function Editor() {
             </div>
           )}
 
-          {/* AI explanation result */}
           {explanation && (
             <div className="editor-suggestions">
               <h3>AI Explanation</h3>
@@ -819,7 +730,6 @@ function Editor() {
           )}
         </section>
 
-        {/* Back to dashboard */}
         <div className="editor-bottom">
           <button
             type="button"

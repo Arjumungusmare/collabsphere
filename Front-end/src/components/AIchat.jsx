@@ -2,9 +2,10 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import API_BASE_URL from "../api";
 import "../style/AIchat.css";
 
-const API_URL = "http://localhost:5000/api/ai/chat";
+const API_URL = `${API_BASE_URL}/api/ai/chat`;
 
 function AIChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,7 +34,6 @@ function AIChat() {
       return;
     }
 
-    // Keep previous conversation messages.
     const history = messages.slice(1).map((item) => ({
       role: item.role === "assistant" ? "model" : "user",
       text: item.text,
@@ -62,7 +62,6 @@ function AIChat() {
         }),
       });
 
-      // Handle a non-JSON response safely.
       let data;
 
       try {
@@ -122,7 +121,6 @@ function AIChat() {
         remarkPlugins={[remarkGfm]}
         components={{
           pre({ children }) {
-            // The code component below provides its own container.
             return <>{children}</>;
           },
 
@@ -130,7 +128,6 @@ function AIChat() {
             const code = String(children).replace(/\n$/, "");
             const isBlock = /language-/.test(className || "");
 
-            // Inline code does not need a Copy button.
             if (!isBlock) {
               return (
                 <code className={className} {...props}>

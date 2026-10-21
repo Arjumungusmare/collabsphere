@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from "../api";
 
 function Register() {
   const navigate = useNavigate();
@@ -31,20 +32,26 @@ function Register() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/register",
+        `${API_BASE_URL}/api/auth/register`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email,
+            email: email.trim(),
             password,
           }),
         }
       );
 
-      const data = await response.json();
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("The server returned an invalid response");
+      }
 
       if (!response.ok) {
         setError(data.message || "Registration failed");
@@ -66,7 +73,11 @@ function Register() {
     } catch (error) {
       console.error("REGISTER ERROR:", error);
 
-      setError("Unable to connect to server");
+      setError(
+        error.message === "The server returned an invalid response"
+          ? error.message
+          : "Unable to connect to server. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -75,7 +86,6 @@ function Register() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-
         <div className="auth-header">
           <span className="eyebrow">GET STARTED</span>
 
@@ -87,17 +97,15 @@ function Register() {
         </div>
 
         {/* Error */}
-
         {error && (
-          <div className="error-message">
+          <div className="error-message" role="alert">
             {error}
           </div>
         )}
 
         {/* Success */}
-
         {success && (
-          <div className="success-message">
+          <div className="success-message" role="status">
             {success}
           </div>
         )}
@@ -106,9 +114,7 @@ function Register() {
           onSubmit={handleRegister}
           autoComplete="off"
         >
-
           {/* Email */}
-
           <div className="form-group">
             <label htmlFor="register-email">
               Email
@@ -127,7 +133,6 @@ function Register() {
           </div>
 
           {/* Password */}
-
           <div className="form-group">
             <label htmlFor="register-password">
               Password
@@ -141,12 +146,12 @@ function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
+              minLength={6}
               required
             />
           </div>
 
           {/* Register Button */}
-
           <button
             type="submit"
             className="primary-btn auth-btn"
@@ -156,7 +161,6 @@ function Register() {
               ? "Creating account..."
               : "Create Account"}
           </button>
-
         </form>
 
         <p className="auth-footer">
@@ -165,7 +169,6 @@ function Register() {
             Login
           </Link>
         </p>
-
       </div>
     </div>
   );

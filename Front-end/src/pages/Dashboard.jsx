@@ -1,15 +1,15 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import NoteCard from "../components/NoteCard";
 import AIChat from "../components/AIchat";
+import API_BASE_URL from "../api";
 
 import "../style/Dashboard.css";
 
-const API_URL = "http://localhost:5000/api/notes";
-const PROJECT_API_URL = "http://localhost:5000/api/projects";
+const API_URL = `${API_BASE_URL}/api/notes`;
+const PROJECT_API_URL = `${API_BASE_URL}/api/projects`;
 
 // Get the logged-in user from localStorage or JWT.
 function getStoredUser() {
@@ -286,8 +286,6 @@ function Dashboard() {
       }
 
       await readResponse(response);
-
-      // Refresh the project list after successful creation.
       await refreshProjects();
 
       setProjectName("");
@@ -349,7 +347,6 @@ function Dashboard() {
       }
 
       const data = await readResponse(response);
-
       await refreshProjects();
 
       setMemberEmail("");
@@ -399,7 +396,6 @@ function Dashboard() {
       }
 
       const data = await readResponse(response);
-
       await refreshProjects();
 
       setMemberSuccess(
@@ -446,7 +442,6 @@ function Dashboard() {
 
       const data = await readResponse(response);
 
-      // Remove the deleted project from the visible list.
       setProjects((previousProjects) =>
         previousProjects.filter(
           (project) => String(project._id) !== String(projectId)
@@ -615,9 +610,11 @@ function Dashboard() {
 
               <button
                 type="button"
-                onClick={() => refreshProjects().catch((err) =>
-                  setProjectError(err.message)
-                )}
+                onClick={() =>
+                  refreshProjects().catch((err) =>
+                    setProjectError(err.message)
+                  )
+                }
               >
                 Retry
               </button>
@@ -635,7 +632,6 @@ function Dashboard() {
                   ? project.members
                   : [];
 
-                // Owner can be an ID or a populated user object.
                 const ownerValue =
                   project.owner ??
                   project.ownerId ??
@@ -656,7 +652,6 @@ function Dashboard() {
                     : project.ownerEmail || ""
                 ).toLowerCase();
 
-                // Compare both user ID and email.
                 const isOwner = Boolean(
                   (currentUserId &&
                     ownerId &&
@@ -727,7 +722,9 @@ function Dashboard() {
                         members.map((member, index) => {
                           const memberId =
                             typeof member === "object"
-                              ? member?._id || member?.id || member?.userId
+                              ? member?._id ||
+                                member?.id ||
+                                member?.userId
                               : member;
 
                           const email =
@@ -776,7 +773,6 @@ function Dashboard() {
                       )}
                     </div>
 
-                    {/* Delete Project is shown to the owner. */}
                     {isOwner && (
                       <button
                         type="button"
