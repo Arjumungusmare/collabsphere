@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import NoteCard from "../components/NoteCard";
-import AIChat from "../components/AIChat";
+import AIChat from "../components/AIchat";
 
 import "../style/Dashboard.css";
 
