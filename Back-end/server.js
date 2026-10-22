@@ -1,4 +1,3 @@
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -11,14 +10,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Ensure the uploads directory exists
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://collabsphere-14.onrender.com",
+  "https://collabsphere-16.onrender.com",
+];
+
 const uploadDir = path.join(__dirname, "uploads");
 fs.mkdirSync(uploadDir, { recursive: true });
 
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -27,28 +37,28 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-// Import routes
+// Routes
 const authRoutes = require("./routes/authRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 
-// Home route
+// Home
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "CollabNotes API is running",
   });
 });
 
-// Register API routes
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/attachments", attachmentRoutes);
 app.use("/api/projects", projectRoutes);
 
-// Handle unknown API endpoints
+// Unknown API endpoint
 app.use("/api", (req, res) => {
   res.status(404).json({
     message: "API endpoint not found",
@@ -63,6 +73,12 @@ app.use((err, req, res, next) => {
     return next(err);
   }
 
+  if (err.message === "Origin not allowed by CORS") {
+    return res.status(403).json({
+      message: "This frontend origin is not allowed",
+    });
+  }
+
   const statusCode =
     err.status && err.status < 500 ? err.status : 500;
 
@@ -74,19 +90,18 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connect to MongoDB and start server
+// Start server
 const startServer = async () => {
   try {
     if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is missing from .env");
+      throw new Error("MONGO_URI is missing");
     }
 
     await mongoose.connect(process.env.MONGO_URI);
-
     console.log("MongoDB connected");
 
     app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`Server listening on port ${PORT}`);
     });
   } catch (error) {
     console.error("Server startup failed:", error.message);

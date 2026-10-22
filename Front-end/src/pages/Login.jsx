@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API_BASE_URL from "../api";
 
-export default function Login() {
+function Login() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -10,41 +10,47 @@ export default function Login() {
     password: "",
   });
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFormData((previous) => ({
-      ...previous,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
     }));
+
+    setError("");
   };
 
-  const onSubmit = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setError("");
 
-    if (!formData.email.trim() || !formData.password) {
+    if (loading) return;
+
+    const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    if (!email || !password) {
       setError("Please enter your email and password.");
       return;
     }
 
     setLoading(true);
+    setError("");
 
     try {
+      const baseURL = API_BASE_URL.replace(/\/+$/, "");
+
       const response = await fetch(
-        `${API_BASE_URL}/api/auth/login`,
+        `${baseURL}/api/auth/login`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            email: formData.email.trim(),
-            password: formData.password,
-          }),
+          body: JSON.stringify({ email, password }),
         }
       );
 
@@ -58,28 +64,25 @@ export default function Login() {
         );
       }
 
-      // Support common token property names.
       const token = data.token || data.accessToken;
-      const user = data.user || data;
 
       if (!token) {
-        throw new Error(
-          "Login response did not contain a token. Check your backend response format."
-        );
+        throw new Error("Authentication token was not received.");
       }
 
-      // Save authentication data.
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user || {})
+      );
 
-      // Redirect to dashboard.
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       console.error("LOGIN ERROR:", err);
 
       setError(
         err instanceof TypeError
-          ? "Unable to connect to server. Please try again."
+          ? "Cannot connect to the server. Please check the backend URL and CORS settings."
           : err.message || "Login failed. Please try again."
       );
     } finally {
@@ -88,87 +91,67 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="mb-2 text-center text-3xl font-bold text-slate-800">
-          Login to CollabNotes
-        </h1>
+    <main className="auth-page">
+      <section className="auth-card">
+        <div className="auth-heading">
+          <span className="eyebrow">COLLABSPHERE</span>
+          <h1>Welcome Back</h1>
+          <p>
+            Sign in to continue collaborating on your projects
+            and notes.
+          </p>
+        </div>
 
-        <p className="mb-6 text-center text-slate-500">
-          Continue working on your notes and ideas.
-        </p>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="email">Email Address</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            placeholder="you@example.com"
+            value={formData.email}
+            onChange={handleChange}
+            autoComplete="email"
+            required
+            disabled={loading}
+          />
 
-        {error && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700"
-          >
-            {error}
-          </div>
-        )}
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            required
+            disabled={loading}
+          />
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-slate-700"
-            >
-              Email
-            </label>
-
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-slate-700"
-            >
-              Password
-            </label>
-
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
+          {error && (
+            <p className="error-message" role="alert">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
+            className="primary-btn"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ marginTop: "10px" }}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Logging in..." : "Login to Account"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+        <div className="auth-footer">
           Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="font-semibold text-blue-600 hover:underline"
-          >
-            Register
-          </Link>
-        </p>
-      </div>
-    </div>
+          <Link to="/register">Create an account</Link>
+        </div>
+      </section>
+    </main>
   );
 }
+
+export default Login;
