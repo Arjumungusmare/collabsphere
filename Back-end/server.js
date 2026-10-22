@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "https://collabsphere-19.onrender.com",
   "https://collabsphere-14.onrender.com",
   "https://collabsphere-16.onrender.com",
 ];
@@ -19,7 +20,7 @@ const allowedOrigins = [
 const uploadDir = path.join(__dirname, "uploads");
 fs.mkdirSync(uploadDir, { recursive: true });
 
-// Middleware
+// CORS
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -27,6 +28,7 @@ app.use(
         return callback(null, true);
       }
 
+      console.error("Blocked CORS origin:", origin);
       return callback(new Error("Origin not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -34,6 +36,7 @@ app.use(
   })
 );
 
+// Middleware
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
@@ -65,7 +68,7 @@ app.use("/api", (req, res) => {
   });
 });
 
-// Global error handler
+// Error handler
 app.use((err, req, res, next) => {
   console.error("Server error:", err.message);
 
@@ -91,7 +94,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const startServer = async () => {
+async function startServer() {
   try {
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI is missing");
@@ -107,6 +110,6 @@ const startServer = async () => {
     console.error("Server startup failed:", error.message);
     process.exit(1);
   }
-};
+}
 
 startServer();
